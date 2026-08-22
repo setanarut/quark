@@ -49,17 +49,14 @@ func (s *BlobsScene) Update() error {
 
 func (s *BlobsScene) addBlob(mousePos quark.Vec2) *quark.SoftBody {
 	sb := quark.NewSoftBody()
-	sb.AddMesh(quark.NewPolygonMesh(64, 12, quark.Vec2Zero(), -1,
-		quark.WithSprings(true),
-		quark.WithPolygons(true),
-	))
+	sb.AddMesh(quark.NewPolygonMesh(64, 12, quark.Vec2Zero(), 0))
 
 	sb.SetPosition(mousePos)
-	sb.SetRigidity(1)
-	sb.SetMass(0.5)
-	sb.SetShapeMatchingEnabled(true, true)
-	sb.SetAreaPreservingEnabled(true)
-	sb.SetAreaPreservingRate(0.5)
+	sb.SetRigidity(0.1)
+	sb.SetMass(0.3)
+	sb.SetShapeMatchingEnabled(true, true).SetShapeMatchingRate(0.02)
+	// sb.SetAreaPreservingEnabled(true)
+	// sb.SetAreaPreservingRate(0.3)
 	s.World.AddSoftBody(sb)
 	return sb
 }
