@@ -15,13 +15,14 @@ type BlobsScene struct {
 
 func NewBlobsScene() *BlobsScene {
 	scene := common.NewScene(1024, 600)
-	scene.World.SetIterationCount(2)
-	scene.Renderer.ShowVertices = false
+	scene.World.SetIterationCount(8)
+	scene.Renderer.ShowPolygon = false
+	scene.Renderer.ShowVertices = true
 
 	// Floor
-	// f := scene.AddStaticRect(512, 550, 960, 64)
-	b := scene.AddRectBodySized(512, 550, 960, 64)
-	b.SetKinematic(true)
+	scene.AddStaticRect(512, 550, 960, 64)
+	// b := scene.AddRectBodySized(512, 550, 960, 64)
+	// b.SetKinematic(true)
 	// pj := quark.NewPinJoint(b, quark.Vec2{512, 550}, f)
 	// scene.World.AddJoint(pj)
 	// Walls
@@ -48,11 +49,15 @@ func (s *BlobsScene) Update() error {
 
 func (s *BlobsScene) addBlob(mousePos quark.Vec2) *quark.SoftBody {
 	sb := quark.NewSoftBody()
-	sb.AddMesh(quark.NewPolygonMesh(64, 12, quark.Vec2Zero(), -1))
+	sb.AddMesh(quark.NewPolygonMesh(64, 12, quark.Vec2Zero(), -1,
+		quark.WithSprings(true),
+		quark.WithPolygons(true),
+	))
+
 	sb.SetPosition(mousePos)
 	sb.SetRigidity(1)
 	sb.SetMass(0.5)
-	sb.SetShapeMatchingEnabled(true, false)
+	sb.SetShapeMatchingEnabled(true, true)
 	sb.SetAreaPreservingEnabled(true)
 	sb.SetAreaPreservingRate(0.5)
 	s.World.AddSoftBody(sb)
@@ -66,3 +71,6 @@ func main() {
 		panic(err)
 	}
 }
+
+// func opt(c *quark.MeshFactoryConfig) {
+// }

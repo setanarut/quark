@@ -17,7 +17,7 @@ func init() {
 	solidImage.Fill(color.White)
 }
 
-// Renderer draws physics bodies to an Ebitengine image without using vector package[cite: 1].
+// Renderer draws physics bodies to an Ebitengine image without using vector package.
 type Renderer struct {
 	ShowColliders     bool
 	ShowBoundingBoxes bool
@@ -25,25 +25,21 @@ type Renderer struct {
 	ShowJoints        bool
 	ShowRaycasts      bool
 	ShowVertices      bool
+	ShowPolygon       bool // true: dolu polygon, false: sadece kenar çizgileri
 
 	// Batching havuzları (Sıfır Allocation için)
 	vertices []ebiten.Vertex
 	indices  []uint16
 	vCount   uint16
-	iCount   uint32 // Index sınırlarını aşmamak için uint32 kullanıyoruz
+	iCount   uint32
 }
 
-// NewRenderer creates a Renderer with default settings[cite: 1].
+// NewRenderer creates a Renderer with default settings.
 func NewRenderer() *Renderer {
 	return &Renderer{
-		ShowColliders:     true,
-		ShowSprings:       true,
-		ShowJoints:        true,
-		ShowRaycasts:      true,
-		ShowVertices:      true,
-		ShowBoundingBoxes: false,
-		vertices:          make([]ebiten.Vertex, 10000),
-		indices:           make([]uint16, 30000),
+		ShowPolygon: true, // varsayılan olarak dolu polygon
+		vertices:    make([]ebiten.Vertex, 10000),
+		indices:     make([]uint16, 30000),
 	}
 }
 
@@ -87,6 +83,7 @@ func (r *Renderer) ensureCapacity(addV uint16, addI uint32) {
 	}
 }
 
+// addConvexPolygon dolu bir çokgen çizer (triangulation ile)
 func (r *Renderer) addConvexPolygon(points []*quark.Particle, clr color.RGBA) {
 	count := len(points)
 	if count < 3 {
@@ -114,8 +111,20 @@ func (r *Renderer) addConvexPolygon(points []*quark.Particle, clr color.RGBA) {
 	}
 }
 
+// addConvexPolygonOutline sadece çokgenin kenarlarını çizer (içi dolu değil)
+func (r *Renderer) addConvexPolygonOutline(points []*quark.Particle, clr color.RGBA) {
+	count := len(points)
+	if count < 2 {
+		return
+	}
+	for i := 0; i < count; i++ {
+		a := points[i].GlobalPosition()
+		b := points[(i+1)%count].GlobalPosition()
+		r.addLine(a, b, 1.5, clr)
+	}
+}
+
 func (r *Renderer) addLine(a, b quark.Vec2, thickness float64, clr color.RGBA) {
-	// math.Hypot float64 beklediği için farkları baştan float64 yapıyoruz
 	dx := b.X - a.X
 	dy := b.Y - a.Y
 	length := math.Hypot(dx, dy)
@@ -123,7 +132,6 @@ func (r *Renderer) addLine(a, b quark.Vec2, thickness float64, clr color.RGBA) {
 		return
 	}
 
-	// Tüm işlemleri float64 yapıp en son float64'ye dönüştürüyoruz
 	nx := float32((-dy / length) * thickness / 2)
 	ny := float32((dx / length) * thickness / 2)
 
@@ -159,7 +167,6 @@ func (r *Renderer) addCircle(center quark.Vec2, radius float64, clr color.RGBA) 
 	cr, cg, cb, ca := colorToFloat(clr)
 	cx, cy := float32(center.X), float32(center.Y)
 
-	// Merkez nokta
 	r.vertices[r.vCount] = ebiten.Vertex{DstX: cx, DstY: cy, ColorR: cr, ColorG: cg, ColorB: cb, ColorA: ca}
 	r.vCount++
 
@@ -194,17 +201,16 @@ func (r *Renderer) addRectOutline(min, max quark.Vec2, thickness float64, clr co
 
 // --- ANA ÇİZİM FONKSİYONLARI ---
 
-// Draw renders all bodies in the world to the screen[cite: 1].
+// Draw renders all bodies in the world to the screen.
 func (r *Renderer) Draw(screen *ebiten.Image, world *quark.World) {
 	screen.Fill(colorBg)
 
-	// Her karede havuzu sıfırla (Allocation yok)
 	r.vCount = 0
 	r.iCount = 0
 
 	for _, body := range world.Bodies() {
 		if !body.Enabled() {
-			continue // Devre dışı olanları atla[cite: 1]
+			continue
 		}
 		r.drawBody(body)
 	}
@@ -227,7 +233,6 @@ func (r *Renderer) Draw(screen *ebiten.Image, world *quark.World) {
 		}
 	}
 
-	// Tümü TEK DRAW CALL ile çizilir
 	if r.iCount > 0 {
 		op := &ebiten.DrawTrianglesOptions{}
 		screen.DrawTriangles(r.vertices[:r.vCount], r.indices[:r.iCount], solidImage, op)
@@ -257,26 +262,29 @@ func (r *Renderer) drawBody(body *quark.Body) {
 	}
 
 	for _, mesh := range body.Meshes() {
-		// Poligon kenarlarını çiz (İçi dolu alan)[cite: 1]
-		if len(mesh.Polygon()) >= 2 {
-			r.addConvexPolygon(mesh.Polygon(), clr)
+		poly := mesh.Polygon()
+		if len(poly) >= 3 {
+			if r.ShowPolygon {
+				// Dolu polygon
+				r.addConvexPolygon(poly, clr)
+			} else {
+				// Sadece kenar çizgileri
+				r.addConvexPolygonOutline(poly, clr)
+			}
 		}
 
-		// Köşeleri çiz (Vertices)[cite: 1]
 		if r.ShowVertices && mesh.ParticleCount() > 1 {
 			for _, p := range mesh.Particles() {
 				r.addCircle(p.GlobalPosition(), p.Radius(), colorVertex)
 			}
 		}
 
-		// Tek parçacıkları çiz (Particles)[cite: 1]
 		if mesh.ParticleCount() == 1 {
 			for _, p := range mesh.Particles() {
 				r.addCircle(p.GlobalPosition(), p.Radius(), colorParticle)
 			}
 		}
 
-		// Soft body yaylarını çiz[cite: 1]
 		if body.BodyType() == quark.BodyTypeSoft && r.ShowSprings {
 			for _, spring := range mesh.Springs() {
 				a := spring.ParticleA().GlobalPosition()
@@ -286,7 +294,6 @@ func (r *Renderer) drawBody(body *quark.Body) {
 		}
 	}
 
-	// Bounding Box (AABB) Çizimi[cite: 1]
 	if r.ShowBoundingBoxes {
 		aabb := body.AABB()
 		r.addRectOutline(aabb.Min, aabb.Max, 1.0, colorAABB)
@@ -295,13 +302,13 @@ func (r *Renderer) drawBody(body *quark.Body) {
 
 func (r *Renderer) drawJoint(joint *quark.Joint) {
 	a := joint.AnchorAGlobalPosition()
-	r.addCircle(a, 3.0, colorJoint) // Orijinal koddaki joint anchor boyutu[cite: 1]
+	r.addCircle(a, 3.0, colorJoint)
 }
 
 func (r *Renderer) drawSpring(spring *quark.Spring) {
 	a := spring.ParticleA().GlobalPosition()
 	b := spring.ParticleB().GlobalPosition()
-	r.addLine(a, b, 1.0, colorSpring) // Orijinal yay kalınlığı[cite: 1]
+	r.addLine(a, b, 1.0, colorSpring)
 }
 
 func (r *Renderer) drawRaycast(ray *quark.Raycast) {
@@ -309,21 +316,18 @@ func (r *Renderer) drawRaycast(ray *quark.Raycast) {
 	vec := ray.RayVector()
 	endX := pos.X + vec.X
 	endY := pos.Y + vec.Y
-	r.addLine(pos, quark.Vec2{X: endX, Y: endY}, 1.0, colorRay) // Orijinal ışın çizgisi[cite: 1]
+	r.addLine(pos, quark.Vec2{X: endX, Y: endY}, 1.0, colorRay)
 
 	for _, c := range ray.Contacts() {
-		r.addCircle(c.Position, 3.0, colorRayHit) // Temas noktaları[cite: 1]
+		r.addCircle(c.Position, 3.0, colorRayHit)
 	}
 }
 
-// DrawDragLine draws a line from body to mouse cursor during drag[cite: 1].
-// Not: Bu fonksiyon direkt screen objesine çizer, DrawTriangles havuzuna katılmaz
-// çünkü UI gibi bağımsız çalışır. Havuza katmak için DrawTriangles'dan önce çağrılmalıdır.
+// DrawDragLine draws a line from body to mouse cursor during drag.
 func (r *Renderer) DrawDragLine(screen *ebiten.Image, from, to quark.Vec2) {
-	r.addLine(from, to, 2.0, colorDrag) // Orijinal sürükleme çizgisi[cite: 1]
+	r.addLine(from, to, 2.0, colorDrag)
 	r.addCircle(to, 4.0, colorDrag)
 
-	// Özel olarak anında ekrana basıyoruz
 	if r.iCount > 0 {
 		op := &ebiten.DrawTrianglesOptions{}
 		screen.DrawTriangles(r.vertices[:r.vCount], r.indices[:r.iCount], solidImage, op)
