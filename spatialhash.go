@@ -1,5 +1,10 @@
-// Package spatialhash provides a uniform-grid broadphase implementation.
-//
+package quark
+
+import (
+	"math"
+	"sort"
+)
+
 // QSpatialHashing partitions the world into uniform grid cells. Each body
 // is inserted into all cells its AABB overlaps. Pair generation runs SAP
 // within each cell, deduplicating pairs across cells.
@@ -9,12 +14,6 @@
 // checks a small subset of bodies.
 //
 // Reference: QSpatialHashing in qspatialhashing.h, qspatialhashing.cpp
-package quark
-
-import (
-	"math"
-	"sort"
-)
 
 // SpatialHashing is a uniform-grid broadphase. Implements BroadPhase.
 type SpatialHashing struct {
