@@ -42,29 +42,28 @@ type SoftBody struct {
 
 // NewSoftBody constructs a SoftBody with default values.
 func NewSoftBody() *SoftBody {
-	sb := &SoftBody{
-		rigidity:               1.0,
-		areaPreservingRate:     0.8,
-		areaPreservingRigidity: 1.0,
-		particleSpecificMass:   1.0,
-		shapeMatchingRate:      0.4,
+	return &SoftBody{
+		rigidity:                   1.0,
+		areaPreservingRate:         0.8,
+		areaPreservingRigidity:     1.0,
+		particleSpecificMass:       1.0,
+		shapeMatchingRate:          0.4,
+		bodyType:                   BodyTypeSoft,
+		mode:                       BodyModeDynamic,
+		enabled:                    true,
+		friction:                   0.2,
+		staticFriction:             0.5,
+		airFriction:                0.01,
+		mass:                       1.0,
+		layersBit:                  1,
+		collidableLayersBit:        1,
+		canSleep:                   true,
+		sleepTick:                  120,
+		enableIntegratedVelocities: true,
+		bodySpecificTimeScale:      1.0,
+		inertiaNeedsUpdate:         true,
+		circumferenceNeedsUpdate:   true,
 	}
-	sb.bodyType = BodyTypeSoft
-	sb.mode = BodyModeDynamic
-	sb.enabled = true
-	sb.friction = 0.2
-	sb.staticFriction = 0.5
-	sb.airFriction = 0.01
-	sb.mass = 1.0
-	sb.layersBit = 1
-	sb.collidableLayersBit = 1
-	sb.canSleep = true
-	sb.sleepTick = 120
-	sb.enableIntegratedVelocities = true
-	sb.bodySpecificTimeScale = 1.0
-	sb.inertiaNeedsUpdate = true
-	sb.circumferenceNeedsUpdate = true
-	return sb
 }
 
 // --- Getters ---

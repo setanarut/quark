@@ -150,9 +150,8 @@ func MarshalJSON(meshes []quark.MeshData) ([]byte, error) {
 			UVMaps:          md.UVMaps,
 			Position:        [2]float64{md.Position.X, md.Position.Y},
 			Rotation:        md.Rotation * (180.0 / math.Pi), // radians to degrees
-		}
 
-		entry.Particles = make([]qmeshParticle, len(md.ParticlePositions))
+			Particles: make([]qmeshParticle, len(md.ParticlePositions))}
 		for j := range md.ParticlePositions {
 			p := qmeshParticle{
 				Position: [2]float64{md.ParticlePositions[j].X, md.ParticlePositions[j].Y},

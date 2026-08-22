@@ -1042,7 +1042,7 @@ func GetCollisions(bodyA, bodyB *Body, pool *ContactPool, applyHotSolvers bool) 
 						winnerContactIndex := -1
 						for i := 0; i < len(contactListPerPolygons); i++ {
 							polygonContacts := contactListPerPolygons[i]
-							for j := 0; j < len(polygonContacts); j++ {
+							for j := range polygonContacts {
 								contact := polygonContacts[j]
 								if contact.Penetration > maxPenetration {
 									maxPenetration = contact.Penetration
