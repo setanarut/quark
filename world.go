@@ -444,6 +444,20 @@ func (w *World) Update() {
 		// Update constraints (springs, angle constraints, joints)
 		w.UpdateConstraints()
 
+		// Shape matching
+		for _, b := range w.bodies {
+			if b.isSleeping {
+				continue
+			}
+			if b.mode != BodyModeStatic && b.bodyType == BodyTypeSoft {
+				if sb := asSoftBody(b); sb != nil {
+					if sb.enableShapeMatching {
+						sb.ApplyShapeMatching()
+					}
+				}
+			}
+		}
+
 		// Update AABBs
 		for _, b := range w.bodies {
 			b.UpdateAABB()
@@ -485,20 +499,6 @@ func (w *World) Update() {
 
 		// Soft body self-collisions (within each soft body)
 		w.solveSoftBodySelfCollisions()
-	}
-
-	// 5. Shape matching (after the iteration loop)
-	for _, b := range w.bodies {
-		if b.isSleeping {
-			continue
-		}
-		if b.mode != BodyModeStatic && b.bodyType == BodyTypeSoft {
-			if sb := asSoftBody(b); sb != nil {
-				if sb.enableShapeMatching {
-					sb.ApplyShapeMatching()
-				}
-			}
-		}
 	}
 
 	// 6. Global AABB update
