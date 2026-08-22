@@ -1,3 +1,4 @@
+// package Quark is a 2D physics engine for games.
 package quark
 
 import "math"

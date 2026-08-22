@@ -1,4 +1,4 @@
-# quarkgo
+# quark
 
 A Go port of [QuarkPhysics](https://github.com/erayzesen/QuarkPhysics), a 2D physics engine for games.
 
