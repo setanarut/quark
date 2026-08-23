@@ -20,11 +20,9 @@ type MixedBodiesScene struct {
 
 func NewMixedBodiesScene() *MixedBodiesScene {
 	scene := common.NewScene(1024, 600)
-	scene.Renderer.ShowVertices = true
-	scene.Renderer.ShowSprings = true
-	scene.Renderer.ShowRaycasts = false
-	scene.Renderer.ShowColliders = false
-	scene.Renderer.ShowJoints = false
+	// scene.Renderer.ShowPolygon = false
+	// scene.Renderer.ShowMeshSprings = true
+	// scene.Renderer.ShowWorldSprings = true
 
 	// Floor
 	floor := scene.AddStaticRect(512, 550, 960, 64)

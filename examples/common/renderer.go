@@ -21,7 +21,8 @@ func init() {
 type Renderer struct {
 	ShowColliders     bool
 	ShowBoundingBoxes bool
-	ShowSprings       bool
+	ShowMeshSprings   bool
+	ShowWorldSprings  bool
 	ShowJoints        bool
 	ShowRaycasts      bool
 	ShowVertices      bool
@@ -37,26 +38,29 @@ type Renderer struct {
 // NewRenderer creates a Renderer with default settings.
 func NewRenderer() *Renderer {
 	return &Renderer{
-		ShowPolygon: true, // varsayılan olarak dolu polygon
-		vertices:    make([]ebiten.Vertex, 10000),
-		indices:     make([]uint16, 30000),
+		ShowPolygon:     true, // varsayılan olarak dolu polygon
+		ShowMeshSprings: true, // varsayılan olarak dolu polygon
+		ShowVertices:    true, // varsayılan olarak dolu polygon
+		vertices:        make([]ebiten.Vertex, 10000),
+		indices:         make([]uint16, 30000),
 	}
 }
 
 var (
-	colorParticle = rgb(202, 158, 219)
-	colorVertex   = rgb(255, 255, 255)
-	colorDynamic  = rgb(48, 182, 3)
-	colorStatic   = rgb(141, 141, 141)
-	colorSoft     = rgb(255, 150, 100)
-	colorArea     = rgb(100, 255, 150)
-	colorBg       = rgb(25, 25, 30)
-	colorSpring   = rgb(0, 0, 0)
-	colorJoint    = rgb(255, 255, 100)
-	colorRay      = rgb(183, 76, 76)
-	colorRayHit   = rgb(255, 0, 0)
-	colorDrag     = rgb(255, 255, 0)
-	colorAABB     = rgb(90, 180, 194)
+	colorParticle    = rgb(202, 158, 219)
+	colorVertex      = rgb(255, 255, 255)
+	colorDynamic     = rgb(48, 182, 3)
+	colorStatic      = rgb(141, 141, 141)
+	colorSoft        = rgb(255, 206, 114)
+	colorArea        = rgb(100, 255, 150)
+	colorBg          = rgb(31, 37, 43)
+	colorWorldSpring = rgb(65, 65, 65)
+	colorMeshSpring  = rgb(0, 0, 0)
+	colorJoint       = rgb(203, 203, 203)
+	colorRay         = rgb(183, 76, 76)
+	colorRayHit      = rgb(255, 0, 0)
+	colorDrag        = rgb(255, 255, 0)
+	colorAABB        = rgb(90, 180, 194)
 )
 
 func rgb(r, g, b uint8) color.RGBA {
@@ -94,7 +98,7 @@ func (r *Renderer) addConvexPolygon(points []*quark.Particle, clr color.RGBA) {
 	startV := r.vCount
 	cr, cg, cb, ca := colorToFloat(clr)
 
-	for i := 0; i < count; i++ {
+	for i := range count {
 		p := points[i].GlobalPosition()
 		r.vertices[r.vCount] = ebiten.Vertex{
 			DstX: float32(p.X), DstY: float32(p.Y),
@@ -210,15 +214,15 @@ func (r *Renderer) Draw(screen *ebiten.Image, world *quark.World) {
 		r.drawBody(body)
 	}
 
-	if r.ShowJoints {
-		for _, joint := range world.Joints() {
-			r.drawJoint(joint)
+	if r.ShowWorldSprings {
+		for _, spring := range world.Springs() {
+			r.drawSpring(spring)
 		}
 	}
 
-	if r.ShowSprings {
-		for _, spring := range world.Springs() {
-			r.drawSpring(spring)
+	if r.ShowJoints {
+		for _, joint := range world.Joints() {
+			r.drawJoint(joint)
 		}
 	}
 
@@ -257,20 +261,19 @@ func (r *Renderer) drawBody(body *quark.Body) {
 	}
 
 	for _, mesh := range body.Meshes() {
-		poly := mesh.Polygon()
-		if len(poly) >= 3 {
-			if r.ShowPolygon {
-				// Dolu polygon
-				r.addConvexPolygon(poly, clr)
-			} else {
-				// Sadece kenar çizgileri
-				r.addConvexPolygonOutline(poly, clr)
+		// ÇÖZÜM BURADA:
+		if r.ShowPolygon {
+			// Dolu poligon çiziminde, mesh'in alt convex parçalarını (SubConvexPolygons) kullanın
+			for _, convexPoly := range mesh.SubConvexPolygons() {
+				if len(convexPoly) >= 3 {
+					r.addConvexPolygon(convexPoly, clr)
+				}
 			}
-		}
-
-		if r.ShowVertices && mesh.ParticleCount() > 1 {
-			for _, p := range mesh.Particles() {
-				r.addCircle(p.GlobalPosition(), p.Radius(), colorVertex)
+		} else {
+			// Sadece kenar çizgileri çizilecekse, ana poligon sınırlarını (Polygon) kullanmak yeterlidir
+			poly := mesh.Polygon()
+			if len(poly) >= 3 {
+				r.addConvexPolygonOutline(poly, clr)
 			}
 		}
 
@@ -280,11 +283,18 @@ func (r *Renderer) drawBody(body *quark.Body) {
 			}
 		}
 
-		if body.BodyType() == quark.BodyTypeSoft && r.ShowSprings {
+		if body.BodyType() == quark.BodyTypeSoft && r.ShowMeshSprings {
 			for _, spring := range mesh.Springs() {
 				a := spring.ParticleA().GlobalPosition()
 				b := spring.ParticleB().GlobalPosition()
-				r.addLine(a, b, 0.5, colorSpring)
+				r.addLineAA(a, b, 0.5, colorMeshSpring)
+			}
+		}
+
+		// (Aşağıdaki particle, vertex ve spring çizim kısımları aynı kalacak...)
+		if r.ShowVertices && mesh.ParticleCount() > 1 {
+			for _, p := range mesh.Particles() {
+				r.addCircle(p.GlobalPosition(), p.Radius(), colorVertex)
 			}
 		}
 	}
@@ -303,7 +313,7 @@ func (r *Renderer) drawJoint(joint *quark.Joint) {
 func (r *Renderer) drawSpring(spring *quark.Spring) {
 	a := spring.ParticleA().GlobalPosition()
 	b := spring.ParticleB().GlobalPosition()
-	r.addLine(a, b, 1.0, colorSpring)
+	r.addLineAA(a, b, 1.0, colorWorldSpring)
 }
 
 func (r *Renderer) drawRaycast(ray *quark.Raycast) {
@@ -326,4 +336,84 @@ func (r *Renderer) DrawDragLine(screen *ebiten.Image, from, to quark.Vec2) {
 		r.vCount = 0
 		r.iCount = 0
 	}
+}
+
+// addLineAA yaylar (springs) gibi ince çizgilerde tırtıklanmayı önlemek için
+// 3 parçalı (orta gövde ve şeffaflığa giden iki kenar) bir çizim yapar.
+func (r *Renderer) addLineAA(a, b quark.Vec2, thickness float64, clr color.RGBA) {
+	d := b.Sub(a)
+	mag := d.Length()
+	if mag == 0 {
+		return
+	}
+
+	nx := float32(-d.Y / mag)
+	ny := float32(d.X / mag)
+
+	// Yumuşatma (feather) payı: Genelde 1.0 piksel yeterlidir
+	feather := float32(1.0)
+	halfThick := float32(thickness / 2.0)
+
+	// İç (tam renkli) ve dış (tam şeffaf) sınır mesafeleri
+	innerDist := halfThick
+	outerDist := halfThick + feather
+
+	// 8 vertex, 3 quad (18 index) için yer açıyoruz
+	r.ensureCapacity(8, 18)
+	startV := r.vCount
+
+	cr, cg, cb, ca := colorToFloat(clr)
+
+	// ÖNEMLİ: Ebitengine "Premultiplied Alpha" kullandığı için,
+	// şeffaf kısımlarda sadece Alpha'yı değil, RGB'yi de sıfırlamalıyız.
+	var zr, zg, zb, za float32 = 0, 0, 0, 0
+
+	ax, ay := float32(a.X), float32(a.Y)
+	bx, by := float32(b.X), float32(b.Y)
+
+	// --- VERTEX VERİLERİ ---
+
+	// V0, V1: Sol Dış Kenar (Şeffaf)
+	r.vertices[r.vCount+0] = ebiten.Vertex{DstX: ax - nx*outerDist, DstY: ay - ny*outerDist, ColorR: zr, ColorG: zg, ColorB: zb, ColorA: za}
+	r.vertices[r.vCount+1] = ebiten.Vertex{DstX: bx - nx*outerDist, DstY: by - ny*outerDist, ColorR: zr, ColorG: zg, ColorB: zb, ColorA: za}
+
+	// V2, V3: Sol İç Kenar (Opak)
+	r.vertices[r.vCount+2] = ebiten.Vertex{DstX: ax - nx*innerDist, DstY: ay - ny*innerDist, ColorR: cr, ColorG: cg, ColorB: cb, ColorA: ca}
+	r.vertices[r.vCount+3] = ebiten.Vertex{DstX: bx - nx*innerDist, DstY: by - ny*innerDist, ColorR: cr, ColorG: cg, ColorB: cb, ColorA: ca}
+
+	// V4, V5: Sağ İç Kenar (Opak)
+	r.vertices[r.vCount+4] = ebiten.Vertex{DstX: ax + nx*innerDist, DstY: ay + ny*innerDist, ColorR: cr, ColorG: cg, ColorB: cb, ColorA: ca}
+	r.vertices[r.vCount+5] = ebiten.Vertex{DstX: bx + nx*innerDist, DstY: by + ny*innerDist, ColorR: cr, ColorG: cg, ColorB: cb, ColorA: ca}
+
+	// V6, V7: Sağ Dış Kenar (Şeffaf)
+	r.vertices[r.vCount+6] = ebiten.Vertex{DstX: ax + nx*outerDist, DstY: ay + ny*outerDist, ColorR: zr, ColorG: zg, ColorB: zb, ColorA: za}
+	r.vertices[r.vCount+7] = ebiten.Vertex{DstX: bx + nx*outerDist, DstY: by + ny*outerDist, ColorR: zr, ColorG: zg, ColorB: zb, ColorA: za}
+	r.vCount += 8
+
+	// --- İNDEX VERİLERİ (3 Adet Dörtgen Oluşturuluyor) ---
+
+	// 1. Sol Yumuşak Kenar
+	r.indices[r.iCount+0] = startV + 0
+	r.indices[r.iCount+1] = startV + 1
+	r.indices[r.iCount+2] = startV + 3
+	r.indices[r.iCount+3] = startV + 0
+	r.indices[r.iCount+4] = startV + 3
+	r.indices[r.iCount+5] = startV + 2
+
+	// 2. Orta (Ana) Gövde
+	r.indices[r.iCount+6] = startV + 2
+	r.indices[r.iCount+7] = startV + 3
+	r.indices[r.iCount+8] = startV + 5
+	r.indices[r.iCount+9] = startV + 2
+	r.indices[r.iCount+10] = startV + 5
+	r.indices[r.iCount+11] = startV + 4
+
+	// 3. Sağ Yumuşak Kenar
+	r.indices[r.iCount+12] = startV + 4
+	r.indices[r.iCount+13] = startV + 5
+	r.indices[r.iCount+14] = startV + 7
+	r.indices[r.iCount+15] = startV + 4
+	r.indices[r.iCount+16] = startV + 7
+	r.indices[r.iCount+17] = startV + 6
+	r.iCount += 18
 }

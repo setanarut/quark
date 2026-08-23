@@ -17,8 +17,6 @@ func NewSoftBodiesScene() *SoftBodiesScene {
 	scene := common.NewScene(1024, 600)
 	// Floor
 	scene.AddStaticRect(512, 550, 3000, 64)
-	scene.Renderer.ShowVertices = true
-	scene.Renderer.ShowPolygon = false
 
 	// PBD-style gridded rect (6×6)
 	sb1 := quark.NewSoftBody()
