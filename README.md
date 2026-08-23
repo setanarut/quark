@@ -179,17 +179,17 @@ Call `world.Update()` once per frame in your game loop.
 ## Examples (Ebitengine)
 
 ```bash
-// Clone the repo
+# Clone the repo
 git clone https://github.com/setanarut/quark.git
 cd quark/examples
 
-// Download dependencies
+# Download dependencies
 go mod tidy
 
-// Run Example 01
+# Run Example 01
 go run ./01_mixed_bodies/
 
-// Run Example 04
+# Run Example 04
 go run ./04_raycasts/
 ```
 
