@@ -2,9 +2,6 @@
 
 A Go port of [QuarkPhysics](https://github.com/erayzesen/QuarkPhysics), a 2D physics engine for games.
 
-## Status
-
-Some logic still does not match the original C++ logic, we are still in active development.
 
 ## Features
 
@@ -175,3 +172,27 @@ world.Update()
 ```
 
 Call `world.Update()` once per frame in your game loop.
+
+
+## Examples (Ebitengine)
+
+```Go
+# Clone the repo
+git clone https://github.com/setanarut/quark.git
+cd quark/examples
+
+# Download dependencies
+go mod tidy
+
+# Run Example 01
+go run ./01_mixed_bodies/
+
+# Run Example 04
+go run ./04_raycasts/
+```
+
+## Credits
+
+Built by GLM 5.2 (Z.ai) as an autonomous development task across 6 phases. Subsequent improvements, refactoring and fixes were made manually.
+
+Thanks to [Vmarcelo49](https://github.com/Vmarcelo49), [erayzesen](https://github.com/erayzesen)
