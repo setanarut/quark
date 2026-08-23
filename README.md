@@ -178,7 +178,7 @@ Call `world.Update()` once per frame in your game loop.
 
 ## Examples (Ebitengine)
 
-```Go
+```bash
 // Clone the repo
 git clone https://github.com/setanarut/quark.git
 cd quark/examples
