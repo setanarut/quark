@@ -27,18 +27,19 @@ func NewRaycastsScene() *RaycastsScene {
 
 	// 15 random bodies
 	for range 15 {
-		x := float64(rand.IntN(800) + 100)
-		y := float64(rand.IntN(400) + 100)
+		x := rand.Float64()*800 + 100
+		y := rand.Float64()*400 + 100
+
 		switch rand.IntN(3) {
 		case 0:
-			w := float64(rand.IntN(96) + 32)
-			h := float64(rand.IntN(96) + 32)
+			w := rand.Float64()*96 + 32
+			h := rand.Float64()*96 + 32
 			scene.AddRectBodySized(x, y, w, h)
 		case 1:
-			r := float64(rand.IntN(48) + 16)
-			scene.AddPolygonBodyR(x, y, rand.IntN(6)+6, r)
+			r := rand.Float64()*48 + 16
+			scene.AddPolygonBodyR(x, y, rand.N(6)+6, r)
 		case 2:
-			r := float64(rand.IntN(48) + 16)
+			r := rand.Float64()*48 + 16
 			scene.AddCircleBodyR(x, y, r)
 		}
 	}

@@ -945,15 +945,6 @@ func GeneratePolygonMeshData(radius float64, sideCount int, centerPosition Vec2,
 	return res
 }
 
-// --- Internal helpers used by Body ---
-
-// markSubConvexPolygonsDirty flags that the convex decomposition cache
-// is stale. Called when the polygon changes.
-// TODO: Check why this is unused, where in the c++ code this was ported from.
-func (m *Mesh) markSubConvexPolygonsDirty() {
-	m.subConvexPolygonsNeedsUpdate = true
-}
-
 // UpdateSubConvexPolygons recomputes the convex decomposition of the
 // mesh's polygon. If the polygon is convex, the decomposition is just
 // the polygon itself. If concave, it's decomposed via polypartition.

@@ -129,7 +129,7 @@ func RaycastTo(world *World, rayPosition, rayVector Vec2, collidableLayers int, 
 			case CollisionCircles:
 				raycastToParticles(body, mesh, rayPosition, rayVector, rayNormal, enableContainingBodies, &contacts)
 			case CollisionPolygons, CollisionPolyline:
-				raycastToPolygon(body, mesh, rayPosition, rayVector, rayNormal, enableContainingBodies, &contacts)
+				raycastToPolygon(body, mesh, rayPosition, rayVector, enableContainingBodies, &contacts)
 			}
 		}
 	}
@@ -226,7 +226,7 @@ func raycastToParticles(body *Body, mesh *Mesh, rayPos, rayVec, rayNormal Vec2, 
 // applies the C++ containing-body check via `rayVec.Dot(normal) > 0`.
 // Normal direction is the winding-dependent perpendicular — NOT flipped to
 // face the ray (matching C++).
-func raycastToPolygon(body *Body, mesh *Mesh, rayPos, rayVec, rayNormal Vec2, enableContaining bool, contacts *[]RaycastContact) {
+func raycastToPolygon(body *Body, mesh *Mesh, rayPos, rayVec Vec2, enableContaining bool, contacts *[]RaycastContact) {
 	rayEnd := rayPos.Add(rayVec)
 	poly := mesh.polygon
 	n := len(poly)

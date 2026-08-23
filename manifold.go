@@ -476,18 +476,3 @@ func (b *Body) onCollision(info CollisionInfo) bool {
 	}
 	return result
 }
-
-// dispatchAreaBodyEvents notifies area bodies of enter/exit events.
-// TODO: Check why this is unused, where in the c++ code this was ported from.
-func (m *Manifold) dispatchAreaBodyEvents() {
-	if m.bodyA.bodyType == BodyTypeArea {
-		if ab := asAreaBody(m.bodyA); ab != nil {
-			ab.addCollidedBody(m.bodyB)
-		}
-	}
-	if m.bodyB.bodyType == BodyTypeArea {
-		if ab := asAreaBody(m.bodyB); ab != nil {
-			ab.addCollidedBody(m.bodyA)
-		}
-	}
-}

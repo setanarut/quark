@@ -53,7 +53,7 @@ var (
 	colorBg       = rgb(25, 25, 30)
 	colorSpring   = rgb(0, 0, 0)
 	colorJoint    = rgb(255, 255, 100)
-	colorRay      = rgb(102, 102, 102)
+	colorRay      = rgb(183, 76, 76)
 	colorRayHit   = rgb(255, 0, 0)
 	colorDrag     = rgb(255, 255, 0)
 	colorAABB     = rgb(90, 180, 194)
@@ -117,7 +117,7 @@ func (r *Renderer) addConvexPolygonOutline(points []*quark.Particle, clr color.R
 	if count < 2 {
 		return
 	}
-	for i := 0; i < count; i++ {
+	for i := range count {
 		a := points[i].GlobalPosition()
 		b := points[(i+1)%count].GlobalPosition()
 		r.addLine(a, b, 1.5, clr)
@@ -125,15 +125,10 @@ func (r *Renderer) addConvexPolygonOutline(points []*quark.Particle, clr color.R
 }
 
 func (r *Renderer) addLine(a, b quark.Vec2, thickness float64, clr color.RGBA) {
-	dx := b.X - a.X
-	dy := b.Y - a.Y
-	length := math.Hypot(dx, dy)
-	if length == 0 {
-		return
-	}
-
-	nx := float32((-dy / length) * thickness / 2)
-	ny := float32((dx / length) * thickness / 2)
+	d := b.Sub(a)
+	mag := d.Length()
+	nx := float32((-d.Y / mag) * thickness / 2)
+	ny := float32((d.X / mag) * thickness / 2)
 
 	r.ensureCapacity(4, 6)
 	startV := r.vCount
@@ -170,7 +165,7 @@ func (r *Renderer) addCircle(center quark.Vec2, radius float64, clr color.RGBA) 
 	r.vertices[r.vCount] = ebiten.Vertex{DstX: cx, DstY: cy, ColorR: cr, ColorG: cg, ColorB: cb, ColorA: ca}
 	r.vCount++
 
-	for i := 0; i < segments; i++ {
+	for i := range segments {
 		angle := float64(i) / float64(segments) * 2 * math.Pi
 		x := cx + float32(math.Cos(angle)*radius)
 		y := cy + float32(math.Sin(angle)*radius)
@@ -312,14 +307,11 @@ func (r *Renderer) drawSpring(spring *quark.Spring) {
 }
 
 func (r *Renderer) drawRaycast(ray *quark.Raycast) {
-	pos := ray.Position()
-	vec := ray.RayVector()
-	endX := pos.X + vec.X
-	endY := pos.Y + vec.Y
-	r.addLine(pos, quark.Vec2{X: endX, Y: endY}, 1.0, colorRay)
-
-	for _, c := range ray.Contacts() {
-		r.addCircle(c.Position, 3.0, colorRayHit)
+	for i, contact := range ray.Contacts() {
+		if i == 0 {
+			r.addLine(ray.Position(), contact.Position, 1.0, colorRay)
+			r.addCircle(contact.Position, 3.0, colorRayHit)
+		}
 	}
 }
 

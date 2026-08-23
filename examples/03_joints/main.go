@@ -5,9 +5,11 @@ package main
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/setanarut/quark"
+	qu "github.com/setanarut/quark"
 	"github.com/setanarut/quark/examples/common"
 )
+
+type vec = qu.Vec2
 
 type JointsScene struct {
 	*common.Scene
@@ -41,35 +43,35 @@ func pinJointSample(scene *common.Scene, x, y float64) {
 	poly := scene.AddPolygonBodyR(x, y+48+32+48, 6, 24)
 
 	// Pin ball to air
-	j1 := quark.NewJoint(ball, quark.Vec2{X: x, Y: y - 24}, quark.Vec2{X: x, Y: y - 24}, nil)
+	j1 := qu.NewJoint(ball, vec{x, y - 24}, vec{x, y - 24}, nil)
 	j1.SetRigidity(1.0)
 	scene.World.AddJoint(j1)
 
 	// Ball to box
-	j2 := quark.NewJoint(ball, quark.Vec2{X: x, Y: y + 24}, quark.Vec2{X: x, Y: y + 48 - 16}, box)
+	j2 := qu.NewJoint(ball, vec{x, y + 24}, vec{x, y + 48 - 16}, box)
 	j2.SetRigidity(1.0)
 	scene.World.AddJoint(j2)
 
 	// Box to polygon
-	j3 := quark.NewJoint(box, quark.Vec2{X: x, Y: y + 48 + 16}, quark.Vec2{X: x, Y: y + 48 + 32 - 24}, poly)
+	j3 := qu.NewJoint(box, vec{x, y + 48 + 16}, vec{x, y + 48 + 32 - 24}, poly)
 	j3.SetRigidity(1.0)
 	scene.World.AddJoint(j3)
 }
 
 func springDistanceJointSample(scene *common.Scene, x, y float64) {
-	var prev *quark.RigidBody
+	var prev *qu.RigidBody
 	for i := range 6 {
 		ball := scene.AddCircleBodyR(x, y+float64(i)*48, 24)
 		if i == 0 {
 			// Pin first ball to air
-			j := quark.NewJoint(ball, quark.Vec2{X: x, Y: y}, quark.Vec2{X: x, Y: y}, nil)
+			j := qu.NewJoint(ball, vec{x, y}, vec{x, y}, nil)
 			j.SetRigidity(1.0)
 			scene.World.AddJoint(j)
 		}
 		if prev != nil {
-			j := quark.NewJoint(prev,
-				quark.Vec2{X: x, Y: y + float64(i-1)*48 + 24},
-				quark.Vec2{X: x, Y: y + float64(i)*48 - 24},
+			j := qu.NewJoint(prev,
+				vec{x, y + float64(i-1)*48 + 24},
+				vec{x, y + float64(i)*48 - 24},
 				ball)
 			j.SetRigidity(0.1) // Springy
 			scene.World.AddJoint(j)
@@ -83,14 +85,14 @@ func grooveJointSample(scene *common.Scene, x, y float64) {
 	box2 := scene.AddRectBodySized(x, y+48, 32, 32)
 
 	// Pin top box to air
-	j1 := quark.NewJoint(box1, quark.Vec2{X: x, Y: y}, quark.Vec2{X: x, Y: y}, nil)
+	j1 := qu.NewJoint(box1, vec{x, y}, vec{x, y}, nil)
 	j1.SetRigidity(1.0)
 	scene.World.AddJoint(j1)
 
 	// Groove joint between boxes (pull-only, length 96)
-	j2 := quark.NewJoint(box1,
-		quark.Vec2{X: x, Y: y + 16},
-		quark.Vec2{X: x, Y: y + 48 - 16},
+	j2 := qu.NewJoint(box1,
+		vec{x, y + 16},
+		vec{x, y + 48 - 16},
 		box2)
 	j2.SetRigidity(1.0)
 	j2.SetGrooveEnabled(true)
@@ -99,21 +101,21 @@ func grooveJointSample(scene *common.Scene, x, y float64) {
 }
 
 func distanceJointSample(scene *common.Scene, x, y float64) {
-	var prev *quark.RigidBody
+	var prev *qu.RigidBody
 	for i := range 6 {
 		box := scene.AddRectBodySized(x, y+float64(i)*64, 32, 48)
 		if i == 0 {
-			j := quark.NewJoint(box,
-				quark.Vec2{X: x, Y: y - 16},
-				quark.Vec2{X: x, Y: y - 16},
+			j := qu.NewJoint(box,
+				vec{x, y - 16},
+				vec{x, y - 16},
 				nil)
 			j.SetRigidity(1.0)
 			scene.World.AddJoint(j)
 		}
 		if prev != nil {
-			j := quark.NewJoint(prev,
-				quark.Vec2{X: x, Y: y + float64(i-1)*64 + 16},
-				quark.Vec2{X: x, Y: y + float64(i)*64 - 16},
+			j := qu.NewJoint(prev,
+				vec{x, y + float64(i-1)*64 + 16},
+				vec{x, y + float64(i)*64 - 16},
 				box)
 			j.SetRigidity(1.0)
 			scene.World.AddJoint(j)
