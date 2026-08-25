@@ -15,7 +15,6 @@ https://github.com/user-attachments/assets/15ad35f7-526a-4ccb-bde2-fc3708efee58
 - **Angle constraints** — 3-particle angle limits with wrap-around handling
 - **Raycasting** — instance-based auto-update and static one-shot queries; AABB broadphase filter; layer masks
 - **Broadphase** — built-in Sweep-and-Prune; pluggable interface; spatial hashing extension
-- **Platformer body** — walk, jump (variable height, multi-jump, wall jump), slope walking, moving-platform snap
 - **Serialization** — `.qmesh` JSON format for mesh loading/saving
 - **Concave decomposition** — pure-Go Hertel-Mehlhorn algorithm (ear clipping + convex merge)
 - **Parallel narrowphase** — optional goroutine-based collision detection (Phase 5)
